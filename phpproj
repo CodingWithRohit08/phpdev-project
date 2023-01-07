@@ -1,0 +1,111 @@
+1. user registration 
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\User;
+
+class RegistrationController extends Controller
+{
+    public function register(Request $request)
+    {
+        // Validate the request data
+        $request->validate([
+            'email' => 'required|email|unique:users',
+            'phone' => 'required|unique:users',
+            'password' => 'required|confirmed|min:8',
+        ]);
+
+        // Create a new user
+        $user = User::create([
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => bcrypt($request->password),
+        ]);
+
+        // Return a successful response
+        return response()->json(['message' => 'User registered successfully.'], 201);
+    }
+}
+
+
+2.Registered user can create, read and update their profile:  
+
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\User;
+
+class ProfileController extends Controller
+{
+    public function show(Request $request)
+    {
+        // Get the authenticated user
+        $user = $request->user();
+
+        // Return the user's profile
+        return response()->json(['user' => $user], 200);
+    }
+
+    public function update(Request $request)
+    {
+        // Validate the request data
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'role' => 'required|in:editor,writer',
+        ]);
+
+        // Get the authenticated user
+        $user = $request->user();
+
+        // Update the user's profile
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        $user->role = $request->role;
+        $user->save();
+
+        // Return a successful response
+        return response()->json(['message' => 'Profile updated successfully.'], 200);
+    }
+}
+
+
+3. User with writer role can create posts and read, update and delete only their posts:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Post;
+
+class PostsController extends Controller
+{
+    public function create(Request $request)
+    {
+        // Validate the request data
+        $request->validate([
+            'title' => 'required|string',
+            'post' => 'required|string',
+        ]);
+
+        // Get the authenticated user
+        $user = $request->user();
+
+        // Verify that the user has the 'writer' role
+        if ($user->role !== 'writer') {
+            return response()->json(['error' => 'Unauthorized.'], 401);
+        }
+
+        // Create a new post
+        $post = Post::create([
+            'user_id' => $user->id,
+            'title' => $request->title,
+            'post
+
